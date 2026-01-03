@@ -1,25 +1,20 @@
 # lab1/Makefile
-
-# Компилятор (можно не задавать — будет gcc по умолчанию, но явно — лучше)
 CC = gcc
-
-# Флаги компиляции:
-# -Wall — все предупреждения
-# -Wextra — ещё больше полезных предупреждений
-# -std=c11 — стандарт C11 (поддержка // комментариев, лучше безопасность)
-# -g — отладочная информация (для gdb, valgrind)
 CFLAGS = -Wall -Wextra -std=c11 -g
 
-# Цель по умолчанию (выполняется при `make`)
-all: mycat
+# Собираем ОБЕ утилиты по умолчанию
+all: mycat mygrep
 
-# Правило: как собрать mycat из mycat.c
+# Правило для mycat
 mycat: mycat.c
-	gcc -o mycat mycat.c $(CFLAGS)
+	$(CC) -o $@ $< $(CFLAGS)
 
-# Правило: как почистить (удалить собранный бинарник)
+# Правило для mygrep
+mygrep: mygrep.c
+	$(CC) -o $@ $< $(CFLAGS)
+
+# Чистим ОБА бинарника
 clean:
-	rm -f mycat
+	rm -f mycat mygrep
 
-# Говорим make, что all и clean — не файлы, а "служебные цели"
 .PHONY: all clean
