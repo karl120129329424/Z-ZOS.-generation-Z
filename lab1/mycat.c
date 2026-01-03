@@ -1,32 +1,45 @@
 #include <stdio.h>
 #include <string.h>
 
-void cat_stream(FILE *stream) {
+void cat_stream(FILE *stream, int number_lines, int *line_counter) {
     char buffer[1024];
     while (fgets(buffer, sizeof(buffer), stream) != NULL) {
+        if (number_lines) {
+            printf("%6d\t", (*line_counter)++);
+        }
         fputs(buffer, stdout);
     }
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 1) {
-        // Нет аргументов — читаем stdin
-        cat_stream(stdin);
+    int show_line_numbers = 0;
+    int file_start = 1;
+
+    // Парсим флаги: ищем "-n"
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-n") == 0) {
+            show_line_numbers = 1;
+            file_start++;  // пропускаем этот аргумент
+        } else {
+            break;  // флаги идут в начале — как в cat
+        }
+    }
+
+    int line_num = 1;
+
+    if (argc == file_start) {
+        // Только stdin
+        cat_stream(stdin, show_line_numbers, &line_num);
     } else {
-        // Есть аргументы — обрабатываем каждый
-        for (int i = 1; i < argc; i++) {
+        for (int i = file_start; i < argc; i++) {
             if (strcmp(argv[i], "-") == 0) {
-                // '-' означает stdin (соглашение Unix)
-                cat_stream(stdin);
+                cat_stream(stdin, show_line_numbers, &line_num);
             } else {
-                // Пытаемся открыть файл
                 FILE *fp = fopen(argv[i], "r");
                 if (fp == NULL) {
-                    // Ошибка: печатаем как perror
                     perror(argv[i]);
                 } else {
-                    // Успешно: читаем и закрываем
-                    cat_stream(fp);
+                    cat_stream(fp, show_line_numbers, &line_num);
                     fclose(fp);
                 }
             }
