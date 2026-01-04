@@ -1,9 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     mygrep
-relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _contains_ignore_case, symObjAddr: 0x0, symBinAddr: 0x100003AB8, symSize: 0x178 }
-  - { offsetInCU: 0x49, offset: 0x49, size: 0x8, addend: 0x0, symName: _contains_ignore_case, symObjAddr: 0x0, symBinAddr: 0x100003AB8, symSize: 0x178 }
-  - { offsetInCU: 0xEF, offset: 0xEF, size: 0x8, addend: 0x0, symName: _grep_stream, symObjAddr: 0x178, symBinAddr: 0x100003C30, symSize: 0x100 }
-  - { offsetInCU: 0x159, offset: 0x159, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x278, symBinAddr: 0x100003D30, symSize: 0x1C4 }
-...
