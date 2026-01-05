@@ -3,7 +3,11 @@
 #include <dirent.h>   // +
 #include <string.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
+
     // По умолчанию директория "."
     const char *path = ".";
     
