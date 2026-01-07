@@ -64,12 +64,6 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         file_count++;
-        //-
-        
-        //--
-        file_count++;
-        fprintf(stderr, "[DEBUG] добавлено: %s (всего: %d)\n", entry->d_name, file_count);
-        //--
     }
 
     closedir(dir);
