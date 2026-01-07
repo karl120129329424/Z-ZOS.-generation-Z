@@ -1,1 +1,14 @@
 myls
+*.o
+
+*~
+.*.swp
+.*.swo
+
+.vscode/
+.idea/
+*.code-workspace
+
+.DS_Store
+
+*.txt
