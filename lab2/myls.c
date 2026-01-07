@@ -68,6 +68,21 @@ int main(int argc, char *argv[]) {
 
     closedir(dir);
 
+
+    // сортируем имена по алфавиту пузырьком
+    for (int i = 0; i < file_count - 1; i++)
+    {
+        for (int j = i + 1; j < file_count; j++)
+        {
+            if (strcmp(file_list[i], file_list[j]) > 0)
+            { // Меняем местами file_list[i] и file_list[j]
+                char *tmp = file_list[i];
+                file_list[i] = file_list[j];
+                file_list[j] = tmp;
+            }
+        }
+    }
+
     // вывод из массива
     for (int i = 0; i < file_count; i++) {
         printf("%s\n", file_list[i]);
