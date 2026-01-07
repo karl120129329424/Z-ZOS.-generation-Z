@@ -5,13 +5,61 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <pwd.h>
+#include <grp.h> 
+
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
 //макось, мммммм
 
 
-int main(int argc, char *argv[]) {
+//
+char *get_username(uid_t uid)
+{
+    struct passwd *pw = getpwuid(uid);
+    return pw ? pw->pw_name : "unknown";
+}
+
+char *get_groupname(gid_t gid)
+{
+    struct group *gr = getgrgid(gid);
+    return gr ? gr->gr_name : "unknown";
+}
+//
+
+//функция для формирования строки прав доступа (drwxr-xr--)
+void print_permissions(mode_t mode, char *buf) {
+    buf[0] = '-';
+
+    // тип файла
+    if (S_ISDIR(mode))      buf[0] = 'd';
+    else if (S_ISLNK(mode)) buf[0] = 'l';
+    else if (S_ISCHR(mode)) buf[0] = 'c';
+    else if (S_ISBLK(mode)) buf[0] = 'b';
+    else if (S_ISFIFO(mode))buf[0] = 'p';
+    else if (S_ISSOCK(mode))buf[0] = 's';
+
+    // права владельца
+    buf[1] = (mode & S_IRUSR) ? 'r' : '-';
+    buf[2] = (mode & S_IWUSR) ? 'w' : '-';
+    buf[3] = (mode & S_IXUSR) ? 'x' : '-';
+
+    // группы
+    buf[4] = (mode & S_IRGRP) ? 'r' : '-';
+    buf[5] = (mode & S_IWGRP) ? 'w' : '-';
+    buf[6] = (mode & S_IXGRP) ? 'x' : '-';
+
+    // остальные
+    buf[7] = (mode & S_IROTH) ? 'r' : '-';
+    buf[8] = (mode & S_IWOTH) ? 'w' : '-';
+    buf[9] = (mode & S_IXOTH) ? 'x' : '-';
+    buf[10] = '\0';
+}
+
+
+int main(int argc, char *argv[])
+{
     (void)argc;
     (void)argv;
 
@@ -19,8 +67,10 @@ int main(int argc, char *argv[]) {
     int flag_l = 0;
 
     int opt;
-    while ((opt = getopt(argc, argv, "la")) != -1) {
-        switch (opt) {
+    while ((opt = getopt(argc, argv, "la")) != -1)
+    {
+        switch (opt)
+        {
             case 'a':
                 flag_a = 1;
                 break;
@@ -28,7 +78,7 @@ int main(int argc, char *argv[]) {
                 flag_l = 1;
                 break;
             default:
-                fprintf(stderr, "Использование: %s [-a] [папка]\n", argv[0]);
+                fprintf(stderr, "Использование: %s [-la] [папка]\n", argv[0]);
                 return 1;
         }
     }
@@ -38,7 +88,7 @@ int main(int argc, char *argv[]) {
         path = argv[optind];
     }
 
-    // Откр директорию
+    // откр директорию
     DIR *dir = opendir(path);
     if (!dir) {
         perror(path);
@@ -54,9 +104,7 @@ int main(int argc, char *argv[]) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL)
     {
-        if (!flag_a && entry->d_name[0] == '.') {
-            continue;
-        }
+        if (!flag_a && entry->d_name[0] == '.'){continue;}
 
         // нужно ли расширить массив?
         if (file_count >= alloc_size) {
@@ -69,7 +117,8 @@ int main(int argc, char *argv[]) {
         }
 
         file_list[file_count] = strdup(entry->d_name); // копируем имя (strdup = malloc + strcpy)
-        if (!file_list[file_count]) {
+        if (!file_list[file_count])
+        {
             perror("strdup");
             exit(1);
         }
@@ -79,10 +128,13 @@ int main(int argc, char *argv[]) {
     closedir(dir);
 
 
-    // Сортируем (как раньше)
-    for (int i = 0; i < file_count - 1; i++) {
-        for (int j = i + 1; j < file_count; j++) {
-            if (strcmp(file_list[i], file_list[j]) > 0) {
+    // Сортируем
+    for (int i = 0; i < file_count - 1; i++)
+    {
+        for (int j = i + 1; j < file_count; j++)
+        {
+            if (strcmp(file_list[i], file_list[j]) > 0)
+            {
                 char *tmp = file_list[i];
                 file_list[i] = file_list[j];
                 file_list[j] = tmp;
@@ -90,16 +142,30 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Выводим
+    // цикл вывода
     for (int i = 0; i < file_count; i++) {
         if (flag_l) {
-            // Для -l: пока просто размер
             char full_path[PATH_MAX];
             snprintf(full_path, sizeof(full_path), "%s/%s", path, file_list[i]);
 
             struct stat st;
             if (lstat(full_path, &st) == 0) {
-                printf("%lu %s\n", (unsigned long)st.st_size, file_list[i]);
+                // подготов строку прав
+                char perms[11];
+                print_permissions(st.st_mode, perms);
+
+                // получ имена
+                char *user = get_username(st.st_uid);
+                char *group = get_groupname(st.st_gid);
+
+                // вывод в формате ls -l без даты
+                printf("%s %lu %s %s %lu %s\n",
+                       perms,
+                       (unsigned long)st.st_nlink,
+                       user,
+                       group,
+                       (unsigned long)st.st_size,
+                       file_list[i]);
             } else {
                 perror(full_path);
             }
@@ -108,12 +174,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // вывод из массива
-    for (int i = 0; i < file_count; i++) {
-        printf("%s\n", file_list[i]);
-    }
-
-    // Очистка памятик
+    // Очистка памяти
     for (int i = 0; i < file_count; i++) {
         free(file_list[i]);
     }
