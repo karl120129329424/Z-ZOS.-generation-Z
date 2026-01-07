@@ -3,6 +3,12 @@
 #include <dirent.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+//макось, мммммм
 
 
 int main(int argc, char *argv[]) {
@@ -10,12 +16,16 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     int flag_a = 0;
+    int flag_l = 0;
 
     int opt;
-    while ((opt = getopt(argc, argv, "a")) != -1) {
+    while ((opt = getopt(argc, argv, "la")) != -1) {
         switch (opt) {
             case 'a':
                 flag_a = 1;
+                break;
+            case 'l':
+                flag_l = 1;
                 break;
             default:
                 fprintf(stderr, "Использование: %s [-a] [папка]\n", argv[0]);
@@ -69,17 +79,32 @@ int main(int argc, char *argv[]) {
     closedir(dir);
 
 
-    // сортируем имена по алфавиту пузырьком
-    for (int i = 0; i < file_count - 1; i++)
-    {
-        for (int j = i + 1; j < file_count; j++)
-        {
-            if (strcmp(file_list[i], file_list[j]) > 0)
-            { // Меняем местами file_list[i] и file_list[j]
+    // Сортируем (как раньше)
+    for (int i = 0; i < file_count - 1; i++) {
+        for (int j = i + 1; j < file_count; j++) {
+            if (strcmp(file_list[i], file_list[j]) > 0) {
                 char *tmp = file_list[i];
                 file_list[i] = file_list[j];
                 file_list[j] = tmp;
             }
+        }
+    }
+
+    // Выводим
+    for (int i = 0; i < file_count; i++) {
+        if (flag_l) {
+            // Для -l: пока просто размер
+            char full_path[PATH_MAX];
+            snprintf(full_path, sizeof(full_path), "%s/%s", path, file_list[i]);
+
+            struct stat st;
+            if (lstat(full_path, &st) == 0) {
+                printf("%lu %s\n", (unsigned long)st.st_size, file_list[i]);
+            } else {
+                perror(full_path);
+            }
+        } else {
+            printf("%s\n", file_list[i]);
         }
     }
 
