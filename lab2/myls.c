@@ -34,15 +34,51 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // сбор имён в массив
+    char **file_list = NULL;   // массив строк (указателей на char)
+    int file_count = 0;        // кол-во скок добавили
+    int alloc_size = 0;        // скок памяти выделено (в элементах)
+    //-
+
     struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        // Пропускаем скрытые, если флаг -a НЕ задан
+    while ((entry = readdir(dir)) != NULL)
+    {
         if (!flag_a && entry->d_name[0] == '.') {
             continue;
         }
-        printf("%s\n", entry->d_name);
+
+        // нужно ли расширить массив?
+        if (file_count >= alloc_size) {
+            alloc_size = alloc_size ? alloc_size * 2 : 8;
+            file_list = realloc(file_list, alloc_size * sizeof(char *));
+            if (!file_list) {
+                perror("realloc");
+                exit(1);
+            }
+        }
+
+        file_list[file_count] = strdup(entry->d_name); // копируем имя (strdup = malloc + strcpy)
+        if (!file_list[file_count]) {
+            perror("strdup");
+            exit(1);
+        }
+        file_count++;
+        //-
     }
 
     closedir(dir);
+
+    // вывод из массива (пока без сортировки) ---
+    for (int i = 0; i < file_count; i++) {
+        printf("%s\n", file_list[i]);
+    }
+
+    // Очистка памятик
+    for (int i = 0; i < file_count; i++) {
+        free(file_list[i]);
+    }
+    free(file_list);
+    //-
+
     return 0;
 }
