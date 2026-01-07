@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
@@ -64,11 +65,16 @@ int main(int argc, char *argv[]) {
         }
         file_count++;
         //-
+        
+        //--
+        file_count++;
+        fprintf(stderr, "[DEBUG] добавлено: %s (всего: %d)\n", entry->d_name, file_count);
+        //--
     }
 
     closedir(dir);
 
-    // вывод из массива (пока без сортировки) ---
+    // вывод из массива
     for (int i = 0; i < file_count; i++) {
         printf("%s\n", file_list[i]);
     }
