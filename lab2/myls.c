@@ -11,8 +11,8 @@
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
+#include <time.h>
 //макось, мммммм
-
 
 //
 char *get_username(uid_t uid)
@@ -57,6 +57,12 @@ void print_permissions(mode_t mode, char *buf) {
     buf[10] = '\0';
 }
 
+char* format_time(time_t t) {
+    static char buf[20];
+    struct tm *tm_info = localtime(&t);
+    strftime(buf, sizeof(buf), "%b %d %H:%M", tm_info);
+    return buf;
+}
 
 int main(int argc, char *argv[])
 {
@@ -159,12 +165,13 @@ int main(int argc, char *argv[])
                 char *group = get_groupname(st.st_gid);
 
                 // вывод в формате ls -l без даты
-                printf("%s %lu %s %s %lu %s\n",
+                printf("%s %lu %s %s %lu %s %s\n",
                        perms,
                        (unsigned long)st.st_nlink,
                        user,
                        group,
                        (unsigned long)st.st_size,
+                       format_time(st.st_mtime),
                        file_list[i]);
             } else {
                 perror(full_path);
