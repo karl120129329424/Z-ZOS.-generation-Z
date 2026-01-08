@@ -1,6 +1,6 @@
 mychmod
 
-*.dSYM/ //для МакОси
+*.dSYM/
 
 *.o
 *.out
