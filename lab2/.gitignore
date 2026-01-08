@@ -12,3 +12,5 @@ myls
 .DS_Store
 
 *.txt
+
+debug.log
