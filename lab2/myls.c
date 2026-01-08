@@ -64,6 +64,11 @@ char* format_time(time_t t) {
     return buf;
 }
 
+#define COLOR_RESET "\033[0m"
+#define COLOR_BLUE  "\033[34m"   // директории
+#define COLOR_GREEN "\033[32m"   // исполняемые
+#define COLOR_CYAN  "\033[36m"   // ссылки
+
 int main(int argc, char *argv[])
 {
     (void)argc;
@@ -164,21 +169,29 @@ int main(int argc, char *argv[])
                 char *user = get_username(st.st_uid);
                 char *group = get_groupname(st.st_gid);
 
-                // вывод в формате ls -l без даты
-                printf("%s %lu %s %s %lu %s %s\n",
+                // Определяем цвет
+                const char *color = COLOR_RESET;
+
+                if (S_ISDIR(st.st_mode)) {color = COLOR_BLUE;}
+
+                else if (S_ISLNK(st.st_mode)) {color = COLOR_CYAN;}
+                    
+                else if (st.st_mode & S_IXUSR) {color = COLOR_GREEN;}
+
+                printf("%s%s %lu %s %s %lu %s %s%s\n",
+                       color,
                        perms,
                        (unsigned long)st.st_nlink,
                        user,
                        group,
                        (unsigned long)st.st_size,
                        format_time(st.st_mtime),
-                       file_list[i]);
-            } else {
-                perror(full_path);
+                       file_list[i],
+                       COLOR_RESET);
             }
-        } else {
-            printf("%s\n", file_list[i]);
-        }
+            else {perror(full_path);}
+
+        } else {printf("%s\n", file_list[i]);}
     }
 
     // Очистка памяти
