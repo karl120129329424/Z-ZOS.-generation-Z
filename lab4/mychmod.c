@@ -26,7 +26,7 @@ void apply_octal_mode(const char *mode_str, int num_files, char **files) {
 void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
     const char *p = mode_str;
     
-    // Шаг 1: Определяем категории (who)
+    // определяем категории
     int who_mask = 0; // битовая маска: 1=u, 2=g, 4=o
     while (*p == 'u' || *p == 'g' || *p == 'o' || *p == 'a') {
         switch (*p) {
@@ -38,7 +38,7 @@ void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
         p++;
     }
 
-    // кат по умолчанию 'a'
+    //  по умолчанию 'a'
     if (who_mask == 0) {
         who_mask = 7; // все категории
     }
@@ -51,12 +51,12 @@ void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
     char op = *p++;
     
     // провер права
-    if (*p == '\0') {
-        fprintf(stderr, "ошибка: не указаны права в '%s'\n", mode_str);
-        exit(EXIT_FAILURE);
+    if (*p == '\0' && op != '=') {
+    fprintf(stderr, "ошибка: не указаны права в '%s'\n", mode_str);
+    exit(EXIT_FAILURE);
     }
 
-    // собир маску прав для кажд категор
+    // собираем маску прав для каждой категории
     mode_t user_mask = 0, group_mask = 0, other_mask = 0;
     for (int i = 0; p[i] != '\0'; i++) {
         switch (p[i]) {
@@ -83,7 +83,7 @@ void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
 
     mode_t full_mask = user_mask | group_mask | other_mask;
 
-    // примен к каждому файлу
+    // применяем к каждому файлу
     for (int i = 0; i < num_files; i++) {
         struct stat sb;
         if (stat(files[i], &sb) == -1) {
@@ -99,9 +99,14 @@ void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
         } else if (op == '-') {
             new_mode &= ~full_mask;
         } else if (op == '=') {
-            // Пока только ошбка
-            fprintf(stderr, "ошибка: оператор '=' пока не поддерживается\n");
-            exit(EXIT_FAILURE);
+            // дополнено(выполнено)
+            mode_t clear_mask = 0;
+            if (who_mask & 1) clear_mask |= S_IRWXU; // все права владельца
+            if (who_mask & 2) clear_mask |= S_IRWXG; // все права группы
+            if (who_mask & 4) clear_mask |= S_IRWXO; // все остальные права
+
+            new_mode = current & ~clear_mask;
+            new_mode |= full_mask;
         }
 
         if (chmod(files[i], new_mode) == -1) {
