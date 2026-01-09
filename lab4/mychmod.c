@@ -23,42 +23,67 @@ void apply_octal_mode(const char *mode_str, int num_files, char **files) {
     }
 }
 
-// теперь функция принимает файлы и обрабатывает + / -
 void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
-    // чек, что строка начинается с '+' или '-'
-    if (mode_str[0] != '+' && mode_str[0] != '-') {
-        fprintf(stderr, "ошибка: неподдерживаемый оператор в '%s'\n", mode_str);
-        exit(EXIT_FAILURE);
+    const char *p = mode_str;
+    
+    // Шаг 1: Определяем категории (who)
+    int who_mask = 0; // битовая маска: 1=u, 2=g, 4=o
+    while (*p == 'u' || *p == 'g' || *p == 'o' || *p == 'a') {
+        switch (*p) {
+            case 'u': who_mask |= 1; break;
+            case 'g': who_mask |= 2; break;
+            case 'o': who_mask |= 4; break;
+            case 'a': who_mask |= 7; break; // a = u+g+o
+        }
+        p++;
     }
 
-    char op = mode_str[0];
-    const char *perms = mode_str + 1;
+    // кат по умолчанию 'a'
+    if (who_mask == 0) {
+        who_mask = 7; // все категории
+    }
 
-    if (*perms == '\0') {
+    // провер оператор
+    if (*p != '+' && *p != '-' && *p != '=') {
+        fprintf(stderr, "ошибка: ожидается +, - или = в '%s'\n", mode_str);
+        exit(EXIT_FAILURE);
+    }
+    char op = *p++;
+    
+    // провер права
+    if (*p == '\0') {
         fprintf(stderr, "ошибка: не указаны права в '%s'\n", mode_str);
         exit(EXIT_FAILURE);
     }
 
-    // собир бит маску для всех катгорий
-    mode_t mask = 0;
-    for (int i = 0; perms[i] != '\0'; i++) {
-        switch (perms[i]) {
+    // собир маску прав для кажд категор
+    mode_t user_mask = 0, group_mask = 0, other_mask = 0;
+    for (int i = 0; p[i] != '\0'; i++) {
+        switch (p[i]) {
             case 'r':
-                mask |= S_IRUSR | S_IRGRP | S_IROTH;
+                if (who_mask & 1) user_mask |= S_IRUSR;
+                if (who_mask & 2) group_mask |= S_IRGRP;
+                if (who_mask & 4) other_mask |= S_IROTH;
                 break;
             case 'w':
-                mask |= S_IWUSR | S_IWGRP | S_IWOTH;
+                if (who_mask & 1) user_mask |= S_IWUSR;
+                if (who_mask & 2) group_mask |= S_IWGRP;
+                if (who_mask & 4) other_mask |= S_IWOTH;
                 break;
             case 'x':
-                mask |= S_IXUSR | S_IXGRP | S_IXOTH;
+                if (who_mask & 1) user_mask |= S_IXUSR;
+                if (who_mask & 2) group_mask |= S_IXGRP;
+                if (who_mask & 4) other_mask |= S_IXOTH;
                 break;
             default:
-                fprintf(stderr, "ошибка: неизвестное право '%c' в '%s'\n", perms[i], mode_str);
+                fprintf(stderr, "ошибка: неизвестное право '%c' в '%s'\n", p[i], mode_str);
                 exit(EXIT_FAILURE);
         }
     }
 
-    // прим измен к каждому файлу
+    mode_t full_mask = user_mask | group_mask | other_mask;
+
+    // примен к каждому файлу
     for (int i = 0; i < num_files; i++) {
         struct stat sb;
         if (stat(files[i], &sb) == -1) {
@@ -66,13 +91,17 @@ void apply_symbolic_mode(const char *mode_str, int num_files, char **files) {
             continue;
         }
 
-        mode_t current_mode = sb.st_mode;
-        mode_t new_mode;
+        mode_t current = sb.st_mode;
+        mode_t new_mode = current;
 
         if (op == '+') {
-            new_mode = current_mode | mask;   // устн бит
-        } else { // op == '-'
-            new_mode = current_mode & ~mask;  // сброс бит
+            new_mode |= full_mask;
+        } else if (op == '-') {
+            new_mode &= ~full_mask;
+        } else if (op == '=') {
+            // Пока только ошбка
+            fprintf(stderr, "ошибка: оператор '=' пока не поддерживается\n");
+            exit(EXIT_FAILURE);
         }
 
         if (chmod(files[i], new_mode) == -1) {
