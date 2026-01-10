@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -26,8 +27,72 @@ void print_help() {
 }
 
 int add_file_to_archive(const char *archive_name, const char *filename) {
-    // Пока просто выводим, что вызвали
-    printf("Добавляем файл '%s' в архив '%s'\n", filename, archive_name);
+    // 1. Открываем входной файл для чтения
+    int file_fd = open(filename, O_RDONLY);
+    if (file_fd == -1) {
+        perror("Ошибка открытия входного файла");
+        return -1;
+    }
+
+    // 2. Получаем информацию о файле
+    struct stat st;
+    if (fstat(file_fd, &st) == -1) {
+        perror("Ошибка fstat");
+        close(file_fd);
+        return -1;
+    }
+
+    // 3. Открываем архив в режиме дозаписи (если нет — создаём)
+    int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (archive_fd == -1) {
+        perror("Ошибка открытия архива");
+        close(file_fd);
+        return -1;
+    }
+
+    // 4. Заполняем заголовок
+    FileHeader header;
+    memset(&header, 0, sizeof(header));
+    strncpy(header.magic, HEADER_MAGIC, 8);
+    strncpy(header.filename, filename, 15); // максимум 15 символов
+    header.original_size = st.st_size;
+    header.mode = st.st_mode;
+    header.uid = st.st_uid;
+    header.gid = st.st_gid;
+    header.mtime = st.st_mtime;
+
+    // 5. Пишем заголовок в архив
+    if (write(archive_fd, &header, sizeof(header)) != (ssize_t)sizeof(header)) {
+        perror("Ошибка записи заголовка");
+        close(file_fd);
+        close(archive_fd);
+        return -1;
+    }
+
+    // 6. Копируем содержимое файла блоками
+    char buffer[4096];
+    ssize_t nread;
+    while ((nread = read(file_fd, buffer, sizeof(buffer))) > 0) {
+        if (write(archive_fd, buffer, nread) != nread) {
+            perror("Ошибка записи данных");
+            close(file_fd);
+            close(archive_fd);
+            return -1;
+        }
+    }
+
+    if (nread == -1) {
+        perror("Ошибка чтения данных");
+        close(file_fd);
+        close(archive_fd);
+        return -1;
+    }
+
+    // 7. Закрываем файлы
+    close(file_fd);
+    close(archive_fd);
+
+    printf("Файл '%s' успешно добавлен в архив '%s'\n", filename, archive_name);
     return 0;
 }
 
@@ -43,9 +108,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc < 4) {
-    fprintf(stderr, "Не хватает аргументов для -i\n");
-    print_help();
-    return 1;
+        fprintf(stderr, "Не хватает аргументов\n");
+        print_help();
+        return 1;
     }
 
     char *archive = argv[1];
@@ -55,10 +120,8 @@ int main(int argc, char *argv[]) {
     if (strcmp(flag, "-i") == 0 || strcmp(flag, "--input") == 0) {
         return add_file_to_archive(archive, file);
     }
-    
 
-    // Пока не поддерживаем другие команды
-    fprintf(stderr, "Error: unknown command\n");
+    fprintf(stderr, "Ошибка: неизвестная команда '%s'\n", flag);
     print_help();
     return 1;
 }
