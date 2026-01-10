@@ -5,7 +5,7 @@
 #include <time.h>
 #include <string.h>
 
-int main() {
+int main(void) {
     int pipefd[2];
     pid_t child_pid;
     char buffer[256];
@@ -23,6 +23,7 @@ int main() {
         perror("fork");
         exit(EXIT_FAILURE);
     }
+
 
     if (child_pid == 0) {
         // === Дочерний процесс ===
