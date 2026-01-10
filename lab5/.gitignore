@@ -1,0 +1,11 @@
+lab*/archiver
+lab*/main
+lab*/*.out
+lab*/*.bin
+
+*.o
+*.dSYM
+core
+
+*~
+.*.swp
