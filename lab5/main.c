@@ -26,6 +26,12 @@ void print_help() {
     printf("  ./archiver -h(--help)\n");
 }
 
+int add_file_to_archive(const char *archive_name, const char *filename) {
+    // Пока просто выводим, что вызвали
+    printf("Добавляем файл '%s' в архив '%s'\n", filename, archive_name);
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_help();
@@ -36,6 +42,21 @@ int main(int argc, char *argv[]) {
         print_help();
         return 0;
     }
+
+    if (argc < 4) {
+    fprintf(stderr, "Не хватает аргументов для -i\n");
+    print_help();
+    return 1;
+    }
+
+    char *archive = argv[1];
+    char *flag = argv[2];
+    char *file = argv[3];
+
+    if (strcmp(flag, "-i") == 0 || strcmp(flag, "--input") == 0) {
+        return add_file_to_archive(archive, file);
+    }
+    
 
     // Пока не поддерживаем другие команды
     fprintf(stderr, "Error: unknown command\n");
