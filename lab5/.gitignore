@@ -1,7 +1,12 @@
-lab*/archiver
-lab*/main
-lab*/*.out
-lab*/*.bin
+lab5/archiver
+lab5/main
+lab5/*.out
+lab5/*.bin
+
+*.arc
+
+test.txt
+*.txt
 
 *.o
 *.dSYM
