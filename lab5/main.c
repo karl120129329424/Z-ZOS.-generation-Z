@@ -296,7 +296,6 @@ int extract_file_from_archive(const char *archive_name, const char *filename) {
     }
 
     while (remaining > 0) {
-        //size_t to_read = (remaining > (size_t)sizeof(buffer)) ? sizeof(buffer) : (size_t)remaining;
         size_t to_read = ((size_t)remaining > sizeof(buffer)) ? sizeof(buffer) : (size_t)remaining;
         ssize_t nread = read(archive_fd, buffer, to_read);
         if (nread <= 0) {
