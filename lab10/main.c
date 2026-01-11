@@ -23,8 +23,26 @@ void* writer(void* arg) {
         printf("Writer (tid=%lu): wrote %d to array\n", pthread_self(), write_counter);
 
         pthread_rwlock_unlock(&rwlock);
-
         sleep(1);
+    }
+    return NULL;
+}
+
+void* reader(void* arg) {
+    long tid = (long)arg;
+
+    while (1) {
+        pthread_rwlock_rdlock(&rwlock);
+
+        printf("Reader (tid=%ld): [", tid);
+        for (int i = 0; i < ARRAY_SIZE; i++) {
+            printf("%d", shared_array[i]);
+            if (i < ARRAY_SIZE - 1) printf(", ");
+        }
+        printf("]\n");
+
+        pthread_rwlock_unlock(&rwlock);
+        usleep(500000);
     }
     return NULL;
 }
