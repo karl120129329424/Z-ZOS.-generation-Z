@@ -46,3 +46,30 @@ void* reader(void* arg) {
     }
     return NULL;
 }
+
+int main() {
+    pthread_t writer_thread;
+    pthread_t reader_threads[NUM_READERS];
+
+    if (pthread_create(&writer_thread, NULL, writer, NULL) != 0) {
+        perror("Ошибка: не удалось создать пишущий поток");
+        exit(EXIT_FAILURE);
+    }
+
+    for (long i = 0; i < NUM_READERS; i++) {
+        if (pthread_create(&reader_threads[i], NULL, reader, (void*)i) != 0) {
+            perror("Ошибка: не удалось создать читающий поток");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    printf("Программа запущена. Нажмите Ctrl+C для остановки.\n");
+
+    pthread_join(writer_thread, NULL);
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_join(reader_threads[i], NULL);
+    }
+
+    pthread_rwlock_destroy(&rwlock);
+    return 0;
+}
