@@ -11,12 +11,15 @@
 #define BUF_SIZE 256
 
 // Вспомогательная структура для semctl
+// На macOS она уже определена, поэтому объявляем только при необходимости
+#ifndef __APPLE__
 union semun {
     int val;
     struct semid_ds *buf;
     unsigned short *array;
     struct seminfo *__buf;
 };
+#endif
 
 int main() {
     
@@ -39,9 +42,14 @@ int main() {
     }
 
     // Инициализируем семафор в 1 (бинарный)
+#ifndef __APPLE__
     union semun arg;
     arg.val = 1;
     if (semctl(sem_id, 0, SETVAL, arg) == -1) {
+#else
+    // На macOS передаём значение напрямую через указатель на int
+    if (semctl(sem_id, 0, SETVAL, &(int){1}) == -1) {
+#endif
         perror("semctl SETVAL failed");
         exit(EXIT_FAILURE);
     }
