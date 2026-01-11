@@ -11,12 +11,15 @@
 #define BUF_SIZE 256
 
 // Вспомогательная структура для semctl
+// На macOS она уже определена, поэтому объявляем только если нужно
+#ifndef __APPLE__
 union semun {
     int val;
     struct semid_ds *buf;
     unsigned short *array;
     struct seminfo *__buf;
 };
+#endif
 
 int main() {
     int shm_id = shmget(SHM_KEY, BUF_SIZE, 0666);
