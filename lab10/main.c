@@ -12,6 +12,8 @@ int write_counter = 0;
 pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
 void* writer(void* arg) {
+    (void)arg;
+
     while (1) {
         pthread_rwlock_wrlock(&rwlock);
 
@@ -20,7 +22,7 @@ void* writer(void* arg) {
             shared_array[i] = write_counter;
         }
 
-        printf("Writer (tid=%lu): wrote %d to array\n", pthread_self(), write_counter);
+        printf("Writer (tid=%p): wrote %d to array\n", (void*)pthread_self(), write_counter);
 
         pthread_rwlock_unlock(&rwlock);
         sleep(1);
@@ -29,6 +31,8 @@ void* writer(void* arg) {
 }
 
 void* reader(void* arg) {
+    (void)arg;
+
     long tid = (long)arg;
 
     while (1) {
