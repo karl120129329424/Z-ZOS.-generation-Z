@@ -8,3 +8,5 @@
 
 int shared_array[ARRAY_SIZE];
 int write_counter = 0;
+
+pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
