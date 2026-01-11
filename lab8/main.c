@@ -41,3 +41,27 @@ void* reader_thread(void* arg) {
     }
     return NULL;
 }
+
+int main() {
+    pthread_t writer_tid;
+    pthread_t reader_tids[10];
+
+    // пишущий поток
+    if (pthread_create(&writer_tid, NULL, writer_thread, NULL) != 0) {
+        perror("Не удалось создать пишущий поток");
+        exit(EXIT_FAILURE);
+    }
+
+    // 10 читающих потоков
+    for (long i = 0; i < 10; i++) {
+        if (pthread_create(&reader_tids[i], NULL, reader_thread, (void*)i) != 0) {
+            perror("Не удалось создать читающий поток");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    sleep(30);
+
+    printf("Программа завершена.\n");
+    return 0;
+}
