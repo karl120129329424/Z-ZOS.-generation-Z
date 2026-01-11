@@ -26,3 +26,18 @@ void* writer_thread(void* arg) {
     }
     return NULL;
 }
+
+// Функция для читающего потока
+void* reader_thread(void* arg) {
+    long tid = (long)arg; // получаем идентификатор потока
+
+    while (1) {
+        pthread_mutex_lock(&mutex);
+
+        printf("Читающий поток %ld: текущее состояние буфера — '%s'\n", tid, buffer);
+
+        pthread_mutex_unlock(&mutex);
+        sleep(2); // читаем реже, чем пишем
+    }
+    return NULL;
+}
