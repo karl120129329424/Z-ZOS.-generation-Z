@@ -1,0 +1,16 @@
+lab9_1/lab9_1
+lab9_2/sender
+lab9_2/receiver
+
+*/lab9_*/*
+!*/lab9_*/Makefile
+!*/lab9_*/[a-zA-Z]*.c
+
+*~
+.\#*
+
+.DS_Store
+._*
+
+.vscode/
+.idea/
