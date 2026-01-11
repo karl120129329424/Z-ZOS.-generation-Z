@@ -41,21 +41,20 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Инициализируем семафор в 1 (бинарный)
-#ifndef __APPLE__
-    union semun arg;
-    arg.val = 1;
-    if (semctl(sem_id, 0, SETVAL, arg) == -1) {
-#else
-    // На macOS передаём значение напрямую через указатель на int
-    if (semctl(sem_id, 0, SETVAL, &(int){1}) == -1) {
-#endif
-        perror("semctl SETVAL failed");
+    // На macOS semctl(..., SETVAL, ...) смонительно работает.
+    // Вместо этого полагаемся на то, что семафор изначально равен 0,
+    // и первый вызов semop с +1 (V) установит его в 1.
+    // Но так как sender должен писать первым, мы делаем "первый V" вручную
+    // перед циклом, чтобы разблокировать возможное ожидание.
+
+    struct sembuf sem_unlock_first = {0, 1, 0};  // V — разрешить первый доступ
+    if (semop(sem_id, &sem_unlock_first, 1) == -1) {
+        perror("semop initial unlock failed");
         exit(EXIT_FAILURE);
     }
 
-    struct sembuf sem_lock = {0, -1, 0};
-    struct sembuf sem_unlock = {0, 1, 0};
+    struct sembuf sem_lock = {0, -1, 0};   // P
+    struct sembuf sem_unlock = {0, 1, 0};  // V
 
     printf("[Sender] PID: %d\n", getpid());
     printf("[Sender] Готов к передаче...\n");
