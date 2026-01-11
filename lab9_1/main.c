@@ -27,7 +27,7 @@ void* writer_thread(void* arg) {
 }
 
 void* reader_thread(void* arg) {
-    (void)arg; // подавляем предупреждение
+    (void)arg;
     pthread_t tid = pthread_self();
     int counter = 0;
     while (counter < MAX_ITERATIONS) {
